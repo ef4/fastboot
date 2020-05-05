@@ -57,7 +57,7 @@ class EmberApp {
       this.config = allConfig;
     }
 
-    this.html = fs.readFileSync(config.htmlFile, 'utf8');
+    this.html = config.html || fs.readFileSync(config.htmlFile, 'utf8');
 
     this.sandboxRequire = this.buildWhitelistedRequire(this.moduleWhitelist, distPath);
     let filePaths = [require.resolve('./scripts/install-source-map-support')].concat(
@@ -492,11 +492,11 @@ class EmberApp {
       }
     }
 
-    let appFiles, vendorFiles, htmlFile;
+    let appFiles, vendorFiles, htmlFile, html;
 
     if (manifest.htmlEntrypoint) {
       let htmlEntrypoint = require('./html-entrypoint');
-      ({ appFiles, vendorFiles, htmlFile } = htmlEntrypoint(distPath, manifest.htmlEntrypoint));
+      ({ appFiles, vendorFiles, html } = htmlEntrypoint(distPath, manifest.htmlEntrypoint));
     } else {
       debug('reading array of app file paths from manifest');
       appFiles = manifest.appFiles.map(function(appFile) {
@@ -515,6 +515,7 @@ class EmberApp {
       appFiles,
       vendorFiles,
       htmlFile,
+      html,
       moduleWhitelist: pkg.fastboot.moduleWhitelist,
       hostWhitelist: pkg.fastboot.hostWhitelist,
       config,
