@@ -492,20 +492,29 @@ class EmberApp {
       }
     }
 
-    debug('reading array of app file paths from manifest');
-    let appFiles = manifest.appFiles.map(function(appFile) {
-      return path.join(distPath, appFile);
-    });
+    let appFiles, vendorFiles, htmlFile;
 
-    debug('reading array of vendor file paths from manifest');
-    let vendorFiles = manifest.vendorFiles.map(function(vendorFile) {
-      return path.join(distPath, vendorFile);
-    });
+    if (manifest.htmlEntrypoint) {
+      let htmlEntrypoint = require('./html-entrypoint');
+      ({ appFiles, vendorFiles, htmlFile } = htmlEntrypoint(distPath, manifest.htmlEntrypoint));
+    } else {
+      debug('reading array of app file paths from manifest');
+      appFiles = manifest.appFiles.map(function(appFile) {
+        return path.join(distPath, appFile);
+      });
+
+      debug('reading array of vendor file paths from manifest');
+      vendorFiles = manifest.vendorFiles.map(function(vendorFile) {
+        return path.join(distPath, vendorFile);
+      });
+
+      htmlFile = path.join(distPath, manifest.htmlFile);
+    }
 
     return {
       appFiles,
       vendorFiles,
-      htmlFile: path.join(distPath, manifest.htmlFile),
+      htmlFile,
       moduleWhitelist: pkg.fastboot.moduleWhitelist,
       hostWhitelist: pkg.fastboot.hostWhitelist,
       config,
