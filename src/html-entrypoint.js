@@ -6,26 +6,21 @@ const path = require('path');
 
 function htmlEntrypoint(distPath, htmlPath) {
   let html = fs.readFileSync(path.join(distPath, htmlPath), 'utf8');
-
   let dom = new JSDOM(html);
-
-  // all the scripts we want to run go into appFiles. We don't use vendorFiles.
-  // The distinction doesn't matter here, as long as the scripts all stay in the
-  // right relative order.
-  let appFiles = [];
+  let scripts = [];
 
   for (let element of dom.window.document.querySelectorAll('script,fastboot-script')) {
     let src = extractSrc(element);
     let ignored = extractIgnore(element);
     if (!ignored && isRelativeURL(src)) {
-      appFiles.push(path.join(distPath, src));
+      scripts.push(path.join(distPath, src));
     }
     if (element.tagName === 'FASTBOOT-SCRIPT') {
       removeWithWhitespaceTrim(element);
     }
   }
 
-  return { html: dom.serialize(), appFiles, vendorFiles: [] };
+  return { html: dom.serialize(), scripts };
 }
 
 function extractSrc(element) {

@@ -38,11 +38,10 @@ describe('htmlEntrypoint', function() {
 
     fixturify.writeSync(tmpLocation, project);
 
-    let { html, appFiles, vendorFiles } = htmlEntrypoint(tmpLocation, 'index.html');
+    let { html, scripts } = htmlEntrypoint(tmpLocation, 'index.html');
 
     expect(html).to.be.equalHTML(project['index.html']);
-    expect(appFiles).to.deep.equal([]);
-    expect(vendorFiles).to.deep.equal([]);
+    expect(scripts).to.deep.equal([]);
   });
 
   it('correctly works with scripts', function() {
@@ -62,15 +61,14 @@ describe('htmlEntrypoint', function() {
 
     fixturify.writeSync(tmpLocation, project);
 
-    let { html, appFiles, vendorFiles } = htmlEntrypoint(tmpLocation, 'index.html');
+    let { html, scripts } = htmlEntrypoint(tmpLocation, 'index.html');
 
     expect(html).to.be.equalHTML(project['index.html']);
-    expect(appFiles).to.deep.equal([
+    expect(scripts).to.deep.equal([
       `${tmpLocation}/foo.js`,
       `${tmpLocation}/bar.js`,
       `${tmpLocation}/baz.js`,
     ]);
-    expect(vendorFiles).to.deep.equal([]);
   });
 
   it('consumes and removes fastboot-scripts', function() {
@@ -90,7 +88,7 @@ describe('htmlEntrypoint', function() {
 
     fixturify.writeSync(tmpLocation, project);
 
-    let { html, appFiles, vendorFiles } = htmlEntrypoint(tmpLocation, 'index.html');
+    let { html, scripts } = htmlEntrypoint(tmpLocation, 'index.html');
 
     expect(html).to.be.equalHTML(`
       <html>
@@ -100,8 +98,7 @@ describe('htmlEntrypoint', function() {
       </html>
   `);
 
-    expect(appFiles).to.deep.equal([`${tmpLocation}/foo.js`, `${tmpLocation}/bar.js`]);
-    expect(vendorFiles).to.deep.equal([]);
+    expect(scripts).to.deep.equal([`${tmpLocation}/foo.js`, `${tmpLocation}/bar.js`]);
   });
 
   it('trims whitespace when removing fastboot-scripts', function() {
@@ -151,7 +148,7 @@ describe('htmlEntrypoint', function() {
 
     fixturify.writeSync(tmpLocation, project);
 
-    let { html, appFiles, vendorFiles } = htmlEntrypoint(tmpLocation, 'index.html');
+    let { html, scripts } = htmlEntrypoint(tmpLocation, 'index.html');
 
     expect(html).to.be.equalHTML(`
         <html>
@@ -161,8 +158,7 @@ describe('htmlEntrypoint', function() {
           </body>
         </html>
     `);
-    expect(appFiles).to.deep.equal([`${tmpLocation}/foo.js`]);
-    expect(vendorFiles).to.deep.equal([]);
+    expect(scripts).to.deep.equal([`${tmpLocation}/foo.js`]);
   });
 
   it('can use fastboot-specific src', function() {
@@ -182,7 +178,7 @@ describe('htmlEntrypoint', function() {
 
     fixturify.writeSync(tmpLocation, project);
 
-    let { html, appFiles, vendorFiles } = htmlEntrypoint(tmpLocation, 'index.html');
+    let { html, scripts } = htmlEntrypoint(tmpLocation, 'index.html');
 
     expect(html).to.be.equalHTML(`
         <html>
@@ -192,8 +188,7 @@ describe('htmlEntrypoint', function() {
           </body>
         </html>
     `);
-    expect(appFiles).to.deep.equal([`${tmpLocation}/foo.js`, `${tmpLocation}/bar.js`]);
-    expect(vendorFiles).to.deep.equal([]);
+    expect(scripts).to.deep.equal([`${tmpLocation}/foo.js`, `${tmpLocation}/bar.js`]);
   });
 
   it('gracefully ignores absolute URLs', function() {
@@ -212,7 +207,7 @@ describe('htmlEntrypoint', function() {
 
     fixturify.writeSync(tmpLocation, project);
 
-    let { html, appFiles, vendorFiles } = htmlEntrypoint(tmpLocation, 'index.html');
+    let { html, scripts } = htmlEntrypoint(tmpLocation, 'index.html');
 
     expect(html).to.be.equalHTML(`
         <html>
@@ -221,7 +216,6 @@ describe('htmlEntrypoint', function() {
           </body>
         </html>
     `);
-    expect(appFiles).to.deep.equal([]);
-    expect(vendorFiles).to.deep.equal([]);
+    expect(scripts).to.deep.equal([]);
   });
 });
