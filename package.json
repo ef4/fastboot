@@ -28,9 +28,9 @@
     "chalk": "^3.0.0",
     "cookie": "^0.4.0",
     "debug": "^4.1.1",
+    "jsdom": "^16.2.2",
     "resolve": "^1.15.0",
     "simple-dom": "^1.4.0",
-    "simple-html-tokenizer": "^0.5.9",
     "source-map-support": "^0.5.16"
   },
   "devDependencies": {

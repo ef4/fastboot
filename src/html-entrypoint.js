@@ -1,34 +1,72 @@
 'use strict';
 
-const { tokenize } = require('simple-html-tokenizer');
+const { JSDOM } = require('jsdom');
 const fs = require('fs');
 const path = require('path');
-const pattern = /<fastboot-script[^>]*><\/fastboot-script>\n*/g;
 
 function htmlEntrypoint(distPath, htmlPath) {
   let html = fs.readFileSync(path.join(distPath, htmlPath), 'utf8');
+
+  let dom = new JSDOM(html);
 
   // all the scripts we want to run go into appFiles. We don't use vendorFiles.
   // The distinction doesn't matter here, as long as the scripts all stay in the
   // right relative order.
   let appFiles = [];
 
-  for (let token of tokenize(html)) {
-    if (token.type === 'StartTag' && ['script', 'fastboot-script'].includes(token.tagName)) {
-      for (let [name, value] of token.attributes) {
-        if (name === 'src') {
-          appFiles.push(path.join(distPath, value));
-        }
-      }
+  for (let element of dom.window.document.querySelectorAll('script,fastboot-script')) {
+    let src = extractSrc(element);
+    let ignored = extractIgnore(element);
+    if (!ignored && isRelativeURL(src)) {
+      appFiles.push(path.join(distPath, src));
+    }
+    if (element.tagName === 'FASTBOOT-SCRIPT') {
+      removeWithWhitespaceTrim(element);
     }
   }
 
-  // we could bring a full html parser & serializer to the party, but the tags
-  // we're trying to strip out here aren't even allowed to have any textContext,
-  // so they're pretty tame.
-  html = html.replace(pattern, '');
+  return { html: dom.serialize(), appFiles, vendorFiles: [] };
+}
 
-  return { html, appFiles, vendorFiles: [] };
+function extractSrc(element) {
+  if (element.hasAttribute('data-fastboot-src')) {
+    let src = element.getAttribute('data-fastboot-src');
+    element.removeAttribute('data-fastboot-src');
+    return src;
+  } else {
+    return element.getAttribute('src');
+  }
+}
+
+function extractIgnore(element) {
+  if (element.hasAttribute('data-fastboot-ignore')) {
+    element.removeAttribute('data-fastboot-ignore');
+    return true;
+  }
+  return false;
+}
+
+function isRelativeURL(url) {
+  return (
+    url && new URL(url, 'http://_the_current_origin_').origin === 'http://_the_current_origin_'
+  );
+}
+
+// removes an element, and if that element was on a line by itself with nothing
+// but whitespace, removes the whole line. The extra whitespace would otherwise
+// be harmless but ugly.
+function removeWithWhitespaceTrim(element) {
+  let prev = element.previousSibling;
+  let next = element.nextSibling;
+  if (prev && next && prev.nodeType == prev.TEXT_NODE && next.nodeType === next.TEXT_NODE) {
+    let prevMatch = prev.textContent.match(/\n\s*$/);
+    let nextMatch = next.textContent.match(/^(\s*\n)/);
+    if (prevMatch && nextMatch) {
+      prev.textContent = prev.textContent.slice(0, prevMatch.index + 1);
+      next.textContent = next.textContent.slice(nextMatch[0].length);
+    }
+  }
+  element.remove();
 }
 
 module.exports = htmlEntrypoint;
