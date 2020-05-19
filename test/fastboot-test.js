@@ -48,7 +48,7 @@ describe('FastBoot', function() {
     };
 
     expect(fn).to.throw(
-      /(.+)\/fixtures\/empty-package-json\/package.json was malformed or did not contain a manifest/
+      /(.+)\/fixtures\/empty-package-json\/package.json was malformed or did not contain a fastboot config/
     );
   });
 

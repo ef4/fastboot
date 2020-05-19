@@ -47,17 +47,15 @@ function loadConfig(distPath) {
     );
   }
 
-  let manifest;
   let schemaVersion;
   let pkg;
 
   try {
     pkg = JSON.parse(file);
-    manifest = pkg.fastboot.manifest;
     schemaVersion = pkg.fastboot.schemaVersion;
   } catch (e) {
     throw new Error(
-      `${pkgPath} was malformed or did not contain a manifest. Ensure that you have a compatible version of ember-cli-fastboot.`
+      `${pkgPath} was malformed or did not contain a fastboot config. Ensure that you have a compatible version of ember-cli-fastboot.`
     );
   }
 
@@ -76,39 +74,19 @@ function loadConfig(distPath) {
     throw new Error(errorMsg);
   }
 
-  if (schemaVersion < FastBootSchemaVersions.manifestFileArrays) {
-    // transform app and vendor file to array of files
-    manifest = transformManifestFiles(manifest);
+  let appName, config, html, scripts;
+  if (schemaVersion < FastBootSchemaVersions.htmlEntrypoint) {
+    ({ appName, config, html, scripts } = loadManifest(distPath, pkg.fastboot, schemaVersion));
+  } else {
+    appName = pkg.name;
+    ({ config, html, scripts } = htmlEntrypoint(distPath, pkg.fastboot.htmlEntrypoint));
   }
 
-  let config = pkg.fastboot.config;
-  let appName = pkg.fastboot.appName;
-  if (schemaVersion < FastBootSchemaVersions.configExtension) {
-    // read from the appConfig tree
-    if (pkg.fastboot.appConfig) {
-      appName = pkg.fastboot.appConfig.modulePrefix;
-      config = {};
-      config[appName] = pkg.fastboot.appConfig;
-    }
-  }
-
-  let isLegacyWhitelist = schemaVersion < FastBootSchemaVersions.strictWhitelist;
   let sandboxRequire = buildWhitelistedRequire(
     pkg.fastboot.moduleWhitelist,
     distPath,
-    isLegacyWhitelist
+    schemaVersion < FastBootSchemaVersions.strictWhitelist
   );
-
-  let scripts, html;
-
-  if (schemaVersion < FastBootSchemaVersions.htmlEntrypoint) {
-    scripts = manifest.vendorFiles.concat(manifest.appFiles).map(function(file) {
-      return path.join(distPath, file);
-    });
-    html = fs.readFileSync(path.join(distPath, manifest.htmlFile), 'utf8');
-  } else {
-    ({ scripts, html } = htmlEntrypoint(distPath, manifest.htmlEntrypoint));
-  }
 
   return {
     scripts,
@@ -128,6 +106,32 @@ function transformManifestFiles(manifest) {
   manifest.vendorFiles = [manifest.vendorFile];
 
   return manifest;
+}
+
+function loadManifest(distPath, fastbootConfig, schemaVersion) {
+  let manifest = fastbootConfig.manifest;
+
+  if (schemaVersion < FastBootSchemaVersions.manifestFileArrays) {
+    // transform app and vendor file to array of files
+    manifest = transformManifestFiles(manifest);
+  }
+
+  let config = fastbootConfig.config;
+  let appName = fastbootConfig.appName;
+  if (schemaVersion < FastBootSchemaVersions.configExtension) {
+    // read from the appConfig tree
+    if (fastbootConfig.appConfig) {
+      appName = fastbootConfig.appConfig.modulePrefix;
+      config = {};
+      config[appName] = fastbootConfig.appConfig;
+    }
+  }
+
+  let scripts = manifest.vendorFiles.concat(manifest.appFiles).map(function(file) {
+    return path.join(distPath, file);
+  });
+  let html = fs.readFileSync(path.join(distPath, manifest.htmlFile), 'utf8');
+  return { appName, config, scripts, html };
 }
 
 /**

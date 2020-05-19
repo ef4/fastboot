@@ -9,6 +9,16 @@ function htmlEntrypoint(distPath, htmlPath) {
   let dom = new JSDOM(html);
   let scripts = [];
 
+  let config = {};
+  for (let element of dom.window.document.querySelectorAll('meta')) {
+    let name = element.getAttribute('name');
+    if (name && name.endsWith('/config/environment')) {
+      let content = JSON.parse(decodeURIComponent(element.getAttribute('content')));
+      content.APP = Object.assign({ autoboot: false }, content.APP);
+      config[name.slice(0, -1 * '/config/environment'.length)] = content;
+    }
+  }
+
   for (let element of dom.window.document.querySelectorAll('script,fastboot-script')) {
     let src = extractSrc(element);
     let ignored = extractIgnore(element);
@@ -20,7 +30,7 @@ function htmlEntrypoint(distPath, htmlPath) {
     }
   }
 
-  return { html: dom.serialize(), scripts };
+  return { config, html: dom.serialize(), scripts };
 }
 
 function extractSrc(element) {
